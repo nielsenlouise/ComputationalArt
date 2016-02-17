@@ -1,6 +1,8 @@
-""" TODO: Put your header comment here """
+""" Nielsen, Louise makes recursive art.
+"""
 
 import random
+import math
 from PIL import Image
 
 
@@ -14,9 +16,42 @@ def build_random_function(min_depth, max_depth):
         returns: the randomly generated function represented as a nested list
                  (see assignment writeup for details on the representation of
                  these functions)
+
+        this function has no doctests because i did not want to do pseudorandom
+        stuff.
     """
-    # TODO: implement this
-    pass
+    # funcs is a list of the names of the functions
+    funcs = ['x', 'y', 'prod', 'avg', 'cos_pi', 'sin_pi', 'square', 'cube']
+    # chooses a random function from funcs
+    random_func = random.choice(funcs)
+    # following if/elif string describes the return for each of the functions
+    # some of them return only themselves, some return another recursion
+    if random_func == 'x':
+        return ['x']
+    elif random_func == 'y':
+        return ['y']
+    elif random_func == 'prod':
+        return ['prod', build_random_function(min_depth - 1, max_depth - 1), build_random_function(min_depth - 1, max_depth - 1)]
+    elif random_func == 'avg':
+        return ['avg', build_random_function(min_depth - 1, max_depth - 1), build_random_function(min_depth - 1, max_depth - 1)]
+    elif random_func == 'cos_pi':
+        return ['cos_pi', build_random_function(min_depth - 1, max_depth - 1)]
+    elif random_func == 'sin_pi':
+        return ['sin_pi', build_random_function(min_depth - 1, max_depth - 1)]
+    elif random_func == 'square':
+        return ['square', build_random_function(min_depth - 1, max_depth - 1)]
+    elif random_func == 'cube':
+        return ['cube', build_random_function(min_depth - 1, max_depth - 1)]
+    # this if/elif string has three cases
+    # if it is almost at the maximum depth, return 'x' or 'y' to end recursion
+    if max_depth == 0:
+        return random.choice(funcs[:2])
+    # if past minimum depth, return any function
+    elif min_depth == 0:
+        return random.choice(funcs)
+    # otherwise, return only functions that allow another level of recursion
+    else:
+        return random.choice(funcs[2:])
 
 
 def evaluate_random_function(f, x, y):
@@ -28,32 +63,58 @@ def evaluate_random_function(f, x, y):
         y: the value of y to be used to evaluate the function
         returns: the function value
 
+        the long string of ifs and elifs that is this entire function defines
+        what math happens for each of the functions. if the zero entry in the
+        list is the name of the particular function, it returns the result of
+        the appropriate math.
+
+        the doctests test all of the possible functions and also test to two
+        levels of recursion.
+
         >>> evaluate_random_function(["x"],-0.5, 0.75)
         -0.5
         >>> evaluate_random_function(["y"],0.1,0.02)
         0.02
+        >>> evaluate_random_function(['prod', ['sin_pi', ['x']], ['cos_pi', ['x']]], .1, -.2)
+        0.2938926261462365
+        >>> evaluate_random_function(['avg', ['square', ['x']], ['cube', ['y']]], .1, -.2)
+        0.001
     """
-    # TODO: implement this
-    pass
+    if f[0] == 'x':
+        return x
+    elif f[0] == 'y':
+        return y
+    elif f[0] == 'prod':
+        return evaluate_random_function(f[1], x, y) * evaluate_random_function(f[2], x, y)
+    elif f[0] == 'avg':
+        return .5 * (evaluate_random_function(f[1], x, y) + evaluate_random_function(f[2], x, y))
+    elif f[0] == 'cos_pi':
+        return math.cos(math.pi * evaluate_random_function(f[1], x, y))
+    elif f[0] == 'sin_pi':
+        return math.sin(math.pi * evaluate_random_function(f[1], x, y))
+    elif f[0] == 'square':
+        return evaluate_random_function(f[1], x, y) ** 2
+    elif f[0] == 'cube':
+        return evaluate_random_function(f[1], x, y) ** 3
 
 
 def remap_interval(val,
-                   input_interval_start,
-                   input_interval_end,
-                   output_interval_start,
-                   output_interval_end):
-    """ Given an input value in the interval [input_interval_start,
-        input_interval_end], return an output value scaled to fall within
-        the output interval [output_interval_start, output_interval_end].
+                   input_interval_min,
+                   input_interval_max,
+                   output_interval_min,
+                   output_interval_max):
+    """ Given an input value in the interval [input_interval_min,
+        input_interval_max], return an output value scaled to fall within
+        the output interval [output_interval_min, output_interval_max].
 
         val: the value to remap
-        input_interval_start: the start of the interval that contains all
+        input_interval_min: the start of the interval that contains all
                               possible values for val
-        input_interval_end: the end of the interval that contains all possible
+        input_interval_max: the end of the interval that contains all possible
                             values for val
-        output_interval_start: the start of the interval that contains all
+        output_interval_min: the start of the interval that contains all
                                possible output values
-        output_inteval_end: the end of the interval that contains all possible
+        output_inteval_max: the end of the interval that contains all possible
                             output values
         returns: the value remapped from the input to the output interval
 
@@ -64,8 +125,12 @@ def remap_interval(val,
         >>> remap_interval(5, 4, 6, 1, 2)
         1.5
     """
-    # TODO: implement this
-    pass
+    # define the output and input intervals
+    output_interval = float(output_interval_max - output_interval_min)
+    input_interval = float(input_interval_max - input_interval_min)
+    # if you treat the ratio as m in y=mx+b, returns mx+b
+    ratio = output_interval / input_interval
+    return (val - input_interval_min) * ratio + output_interval_min
 
 
 def color_map(val):
@@ -116,9 +181,9 @@ def generate_art(filename, x_size=350, y_size=350):
         x_size, y_size: optional args to set image dimensions (default: 350)
     """
     # Functions for red, green, and blue channels - where the magic happens!
-    red_function = ["x"]
-    green_function = ["y"]
-    blue_function = ["x"]
+    red_function = build_random_function(7, 12)
+    green_function = build_random_function(7, 12)
+    blue_function = build_random_function(7, 12)
 
     # Create image and loop over all pixels
     im = Image.new("RGB", (x_size, y_size))
@@ -139,12 +204,13 @@ def generate_art(filename, x_size=350, y_size=350):
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
+    doctest.run_docstring_examples(evaluate_random_function, globals())
 
     # Create some computational art!
     # TODO: Un-comment the generate_art function call after you
     #       implement remap_interval and evaluate_random_function
-    # generate_art("myart.png")
+    # generate_art("myart3.png")
 
     # Test that PIL is installed correctly
     # TODO: Comment or remove this function call after testing PIL install
-    test_image("noise.png")
+    # test_image("noise.png")
