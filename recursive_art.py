@@ -26,22 +26,12 @@ def build_random_function(min_depth, max_depth):
     random_func = random.choice(funcs)
     # following if/elif string describes the return for each of the functions
     # some of them return only themselves, some return another recursion
-    if random_func == 'x':
-        return ['x']
-    elif random_func == 'y':
-        return ['y']
-    elif random_func == 'prod':
-        return ['prod', build_random_function(min_depth - 1, max_depth - 1), build_random_function(min_depth - 1, max_depth - 1)]
-    elif random_func == 'avg':
-        return ['avg', build_random_function(min_depth - 1, max_depth - 1), build_random_function(min_depth - 1, max_depth - 1)]
-    elif random_func == 'cos_pi':
-        return ['cos_pi', build_random_function(min_depth - 1, max_depth - 1)]
-    elif random_func == 'sin_pi':
-        return ['sin_pi', build_random_function(min_depth - 1, max_depth - 1)]
-    elif random_func == 'square':
-        return ['square', build_random_function(min_depth - 1, max_depth - 1)]
-    elif random_func == 'cube':
-        return ['cube', build_random_function(min_depth - 1, max_depth - 1)]
+    if random_func in ['x', 'y']:
+        return [random_func]
+    elif random_func in ['prod', 'avg']:
+        return [random_func, build_random_function(min_depth - 1, max_depth - 1), build_random_function(min_depth - 1, max_depth - 1)]
+    elif random_func in ['cos_pi', 'sin_pi', 'square', 'cube']:
+        return [random_func, build_random_function(min_depth - 1, max_depth - 1)]
     # this if/elif string has three cases
     # if it is almost at the maximum depth, return 'x' or 'y' to end recursion
     if max_depth == 0:
@@ -80,22 +70,23 @@ def evaluate_random_function(f, x, y):
         >>> evaluate_random_function(['avg', ['square', ['x']], ['cube', ['y']]], .1, -.2)
         0.001
     """
+    args = [evaluate_random_function(arg) for arg in f[1:]]
     if f[0] == 'x':
         return x
     elif f[0] == 'y':
         return y
     elif f[0] == 'prod':
-        return evaluate_random_function(f[1], x, y) * evaluate_random_function(f[2], x, y)
+        return args[0] * args[1]
     elif f[0] == 'avg':
-        return .5 * (evaluate_random_function(f[1], x, y) + evaluate_random_function(f[2], x, y))
+        return .5 * (args[0] + args[1])
     elif f[0] == 'cos_pi':
-        return math.cos(math.pi * evaluate_random_function(f[1], x, y))
+        return math.cos(math.pi * args[0])
     elif f[0] == 'sin_pi':
-        return math.sin(math.pi * evaluate_random_function(f[1], x, y))
+        return math.sin(math.pi * args[0])
     elif f[0] == 'square':
-        return evaluate_random_function(f[1], x, y) ** 2
+        return args[0] ** 2
     elif f[0] == 'cube':
-        return evaluate_random_function(f[1], x, y) ** 3
+        return args[0] ** 3
 
 
 def remap_interval(val,
@@ -202,15 +193,9 @@ def generate_art(filename, x_size=350, y_size=350):
 
 
 if __name__ == '__main__':
-    import doctest
-    doctest.testmod()
-    doctest.run_docstring_examples(evaluate_random_function, globals())
+    # import doctest
+    # doctest.testmod()
+    # doctest.run_docstring_examples(evaluate_random_function, globals())
 
     # Create some computational art!
-    # TODO: Un-comment the generate_art function call after you
-    #       implement remap_interval and evaluate_random_function
-    # generate_art("myart3.png")
-
-    # Test that PIL is installed correctly
-    # TODO: Comment or remove this function call after testing PIL install
-    # test_image("noise.png")
+    generate_art("myart3.png")
