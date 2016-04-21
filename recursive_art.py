@@ -20,73 +20,50 @@ def build_random_function(min_depth, max_depth):
         this function has no doctests because i did not want to do pseudorandom
         stuff.
     """
-    # funcs is a list of the names of the functions
-    funcs = ['x', 'y', 'prod', 'avg', 'cos_pi', 'sin_pi', 'square', 'cube']
-    # chooses a random function from funcs
-    random_func = random.choice(funcs)
-    # following if/elif string describes the return for each of the functions
-    # some of them return only themselves, some return another recursion
-    if random_func in ['x', 'y']:
-        return [random_func]
-    elif random_func in ['prod', 'avg']:
-        return [random_func, build_random_function(min_depth - 1, max_depth - 1), build_random_function(min_depth - 1, max_depth - 1)]
-    elif random_func in ['cos_pi', 'sin_pi', 'square', 'cube']:
-        return [random_func, build_random_function(min_depth - 1, max_depth - 1)]
-    # this if/elif string has three cases
-    # if it is almost at the maximum depth, return 'x' or 'y' to end recursion
-    if max_depth == 0:
-        return random.choice(funcs[:2])
-    # if past minimum depth, return any function
-    elif min_depth == 0:
-        return random.choice(funcs)
-    # otherwise, return only functions that allow another level of recursion
+    # funcs is a dict of the functions
+    funcs = {
+        'x': lambda x, y: x,
+        'y': lambda x, y: y,
+        'prod': lambda x, y: x * y,
+        'avg': lambda x, y: (x + y) / 2.,
+        'cos_pi': lambda x: math.cos(math.pi * x),
+        'sin_pi': lambda x: math.sin(math.pi * x),
+        'square': lambda x: x**2,
+        'cube': lambda x: x**3,
+        'abs': lambda x: abs(x)
+    }
+    # num_args is a dict of func name to how many arguments the func requires
+    num_args = {
+        'x': 0,
+        'y': 0,
+        'prod': 2,
+        'avg': 2,
+        'cos_pi': 1,
+        'sin_pi': 1,
+        'square': 1,
+        'cube': 1,
+        'abs': 1
+    }
+    # chooses a random function from keys of num_args
+    options = num_args.keys()
+    # only functions that take arguments: increase depth
+    if min_depth > 1:
+        options = [func for func in options if num_args[func] > 0]
+    # only functions without arguments: no more depth
+    if max_depth == 1:
+        options = [func for func in options if num_args[func] == 0]
+    # choose a function randomly
+    random_func_name = random.choice(options)
+    # call it from the funcs dict
+    random_func = funcs[random_func_name]
+    # if it is not 'x' or 'y'
+    if num_args[random_func_name]:
+        args = [build_random_function(max(min_depth - 1, 1), max_depth - 1)]
+        args += [build_random_function(1, max_depth - 1) for _ in range(1, num_args[random_func_name])]
+        return lambda x, y: random_func(*[arg(x, y) for arg in args])
+    # if it is 'x' or 'y'
     else:
-        return random.choice(funcs[2:])
-
-
-def evaluate_random_function(f, x, y):
-    """ Evaluate the random function f with inputs x,y
-        Representation of the function f is defined in the assignment writeup
-
-        f: the function to evaluate
-        x: the value of x to be used to evaluate the function
-        y: the value of y to be used to evaluate the function
-        returns: the function value
-
-        the long string of ifs and elifs that is this entire function defines
-        what math happens for each of the functions. if the zero entry in the
-        list is the name of the particular function, it returns the result of
-        the appropriate math.
-
-        the doctests test all of the possible functions and also test to two
-        levels of recursion.
-
-        >>> evaluate_random_function(["x"],-0.5, 0.75)
-        -0.5
-        >>> evaluate_random_function(["y"],0.1,0.02)
-        0.02
-        >>> evaluate_random_function(['prod', ['sin_pi', ['x']], ['cos_pi', ['x']]], .1, -.2)
-        0.2938926261462365
-        >>> evaluate_random_function(['avg', ['square', ['x']], ['cube', ['y']]], .1, -.2)
-        0.001
-    """
-    args = [evaluate_random_function(arg) for arg in f[1:]]
-    if f[0] == 'x':
-        return x
-    elif f[0] == 'y':
-        return y
-    elif f[0] == 'prod':
-        return args[0] * args[1]
-    elif f[0] == 'avg':
-        return .5 * (args[0] + args[1])
-    elif f[0] == 'cos_pi':
-        return math.cos(math.pi * args[0])
-    elif f[0] == 'sin_pi':
-        return math.sin(math.pi * args[0])
-    elif f[0] == 'square':
-        return args[0] ** 2
-    elif f[0] == 'cube':
-        return args[0] ** 3
+        return random_func
 
 
 def remap_interval(val,
@@ -172,9 +149,9 @@ def generate_art(filename, x_size=350, y_size=350):
         x_size, y_size: optional args to set image dimensions (default: 350)
     """
     # Functions for red, green, and blue channels - where the magic happens!
-    red_function = build_random_function(7, 12)
-    green_function = build_random_function(7, 12)
-    blue_function = build_random_function(7, 12)
+    red_function = build_random_function(7, 9)
+    green_function = build_random_function(7, 9)
+    blue_function = build_random_function(7, 9)
 
     # Create image and loop over all pixels
     im = Image.new("RGB", (x_size, y_size))
@@ -184,18 +161,14 @@ def generate_art(filename, x_size=350, y_size=350):
             x = remap_interval(i, 0, x_size, -1, 1)
             y = remap_interval(j, 0, y_size, -1, 1)
             pixels[i, j] = (
-                    color_map(evaluate_random_function(red_function, x, y)),
-                    color_map(evaluate_random_function(green_function, x, y)),
-                    color_map(evaluate_random_function(blue_function, x, y))
+                    color_map(red_function(x, y)),
+                    color_map(green_function(x, y)),
+                    color_map(blue_function(x, y))
                     )
 
     im.save(filename)
 
 
 if __name__ == '__main__':
-    # import doctest
-    # doctest.testmod()
-    # doctest.run_docstring_examples(evaluate_random_function, globals())
-
     # Create some computational art!
-    generate_art("myart3.png")
+    generate_art("myart4.png")
